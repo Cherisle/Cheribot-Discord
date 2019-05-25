@@ -298,7 +298,7 @@ public class Quiz
 		c.sendMessage("Question " + q_number + ": " +questions[index]).queue();
 	}
 	
-	public void checkAnswers(String[] response, MessageChannel c)
+	public int checkAnswers(String[] response, MessageChannel c)
 	{
 		int correct = 0;
 		ArrayList<Integer> correct_indexes = new ArrayList<Integer>();
@@ -337,6 +337,7 @@ public class Quiz
 			System.out.println("Answers: " + answers[ii]);
 		}
 		String final_result = "You got " + correct + " questions correct! Here's an overview:\n";
+		String cheribit_msg = "";
 		for(int ii=0;ii<questions.length;ii++)
 		{
 			int q_index = ii+1;
@@ -360,7 +361,18 @@ public class Quiz
 			}
 			final_result = final_result + "Possible Answers: " + answer_display + "\n";
 		}
+		if(correct == 10)
+		{
+			correct = correct + 2;
+			cheribit_msg = "Bonus! You have gained " + correct + "Cheribits!";
+		}
+		else
+		{
+			cheribit_msg = "You have gained " + correct + " Cheribits!";
+		}
 		c.sendMessage(final_result).queue();
+		c.sendMessage(cheribit_msg).queue();
+		return correct;
 	}
 	
 	//for debug

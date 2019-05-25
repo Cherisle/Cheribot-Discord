@@ -70,13 +70,10 @@ public class CheribotMain extends ListenerAdapter
 	private final String url = "jdbc:sqlite:C://sqlite/db/kanji_storage.db";
 	private final AudioPlayerManager playerManager;
 	private final Map<Long, GuildMusicManager> musicManagers;
-	private final Map<Integer,String> kanjiMap;
 	private final Map<Integer,String> ffMap;
 	
 	private CheribotMain()
 	{
-	    this.kanjiMap = new HashMap<>();
-	    loadKanjis(this.kanjiMap);
 	    this.ffMap = new HashMap<>();
 	    loadFunFacts(this.ffMap);
 		this.musicManagers = new HashMap<>();	    
@@ -86,24 +83,6 @@ public class CheribotMain extends ListenerAdapter
 	    quizSelectDone = false;
 	    players = new ArrayList<Player>();
 	    createNewDatabase("kanji_storage.db");
-	}
-
-	private void loadKanjis(Map<Integer, String> kmap) 
-	{
-		// Token Structure: [kanji]_[readings]_[eng. meaning]_[example uses]
-		// within [example uses]: number of examples delimited by "/", example info delimited by '-'
-		// within [type:word meaning]: delimited by "|" for multiple meanings
-		//[example uses] Structure: [word]-[furigana]-[romaji]-[type:word meaning]
-		kmap.put(0,"大_だい・たい・おお~_large; big_大学 [N5]-だいがく-daigaku-(noun) university; college/大変 [N5]-たいへん-taihen-(adverb) very; greatly; terribly; awfully+(adjectival noun) immense; serious; difficult+(noun) major incident; disaster");
-		kmap.put(1,"人_ジン・ニン・ひと・~り・~と_person_大人 [N5]-おとな-otona-(noun) adult/人口 [N4]-じんこう-jinkou-(noun) population; common talk/人 [N5]-ひと-hito-(noun) man; person; human being");
-		kmap.put(2,"外_ガイ・ゲ・そと・ほか・**はず**す・**はず**れる・と~_outside_外 [N5]-そと-soto-(noun) outside; exterior; open air; other place/外国 [N5]-がいこく-gaikoku-(noun) foreign country");
-		kmap.put(3,"国_コク・くに_country_国 [N5]-くに-kuni-(noun) country; state; region/国語 [N3]-こくご-kokugo-(noun) national language");
-		kmap.put(4,"語_ゴ・**かた**る・**かた**らう_word; speech; language_英語 [N5]-えいご-eigo-(noun) English (language)/物語 [N3]-ものがたり-monogatari-(noun) tale; story; legend/外国語-がいこくご-gaikokugo-(noun) foreign language");
-		kmap.put(5,"音_オン・イン・~ノン・おと・ね_sound; noise_音楽 [N5]-おんがく-ongaku-(noun) music/音声-おんせい-onsei-(noun) voice; speech; sound of a voice; sound (of a TV)");
-		kmap.put(6,"手_シュ・ズ・て・て~・~て・た~_hand_選手 [N3]-せんしゅ-senshu-(noun) player (sports); athlete; team member/上手 [N5]-じょうず-jouzu-(adjectival noun & noun) skillful; skilled; proficient; good (at); adept; clever+(noun) flattery/切手 [N5]-きって-kitte-(noun) stamp (postage); merchandise certificate");
-		kmap.put(7,"声_セイ・ショウ・こえ・こわ~_voice_声 [N5]-こえ-koe-(noun)voice; singing(of a bird); chirping(of an insect); sound/声明 [N1]-せいめい-seimei-(noun) declaration; statement; proclamation");
-		kmap.put(8,"会_カイ・エ・**あ**う・**あ**わせる・**あつ**まる_meeting; meet; party; association; interview; join_会社 [N5]-かいしゃ-kaisha-(noun) company; corporation; workplace/会話 [N4]-かいわ-kaiwa-(noun) conversation");
-		kmap.put(9,"使_シ・**つか**う・**つか**い・**~つか**い・**~づか**い_use; send on a mission; order; messenger; envoy; ambassador; cause_使命 [N1]-しめい-shimei-(noun) mission; errand; task; duty; obligation/使う [N5]-つかう-tsukau-(verb) to use (a thing, method, etc.); to make use of; to put to use");
 	}
 
 	private void loadFunFacts(Map<Integer, String> ffmap)
@@ -194,64 +173,69 @@ public class CheribotMain extends ListenerAdapter
         //Now that you have a grasp on the things that you might see in an event, specifically MessageReceivedEvent,
         // we will look at sending / responding to messages!
         //This will be an extremely simplified example of command processing.
+        int player_index = 0; //init
         if(players != null)
         {
         	for(int ii=0;ii<players.size();ii++)
         	{
-        		if(players.get(ii).getInQuiz() == true && players.get(ii).getName().equals(author.getName()) && players.get(ii).getId().equals(author.getId()) && players.get(ii).getActive() == true)
+        		if(players.get(ii).getName().equals(author.getName()) && players.get(ii).getId().equals(author.getId()))
         		{
-        			if(players.get(ii).getQuizSelectStatus())
+        			player_index = ii;
+        			if(players.get(ii).getInQuiz() == true && players.get(ii).getActive() == true)
         			{
-        				System.out.println(players.get(ii).getName() + " currently in quiz and typed");
-            			int curr_index = players.get(ii).getCurrentIndex()+1;
-            			String quiz_response = "Response accepted from currently in-quiz user " + players.get(ii).getName() + " to: Question " + curr_index;
-            			channel.sendMessage(quiz_response).queue();
-            			players.get(ii).assignAnswer(curr_index, msg);
-            			players.get(ii).setCurrentIndex(players.get(ii).getCurrentIndex()+1);
-            			if(players.get(ii).getCurrentIndex() == players.get(ii).getQuiz().getTotalQuestions()) //incremented index hit total amount
+        				if(players.get(ii).getQuizSelectStatus())
             			{
-            				String thank_response = "Thanks for taking the quiz!";
-            				channel.sendMessage(thank_response).queue();
-            				players.get(ii).setCurrentIndex(0); //reset the index
-            				players.get(ii).setInQuiz(false,1,channel); // end the quiz
+            				System.out.println(players.get(ii).getName() + " currently in quiz and typed");
+                			int curr_index = players.get(ii).getCurrentIndex()+1;
+                			String quiz_response = "Response accepted from currently in-quiz user " + players.get(ii).getName() + " to: Question " + curr_index;
+                			channel.sendMessage(quiz_response).queue();
+                			players.get(ii).assignAnswer(curr_index, msg);
+                			players.get(ii).setCurrentIndex(players.get(ii).getCurrentIndex()+1);
+                			if(players.get(ii).getCurrentIndex() == players.get(ii).getQuiz().getTotalQuestions()) //incremented index hit total amount
+                			{
+                				String thank_response = "Thanks for taking the quiz!";
+                				channel.sendMessage(thank_response).queue();
+                				players.get(ii).setCurrentIndex(0); //reset the index
+                				players.get(ii).setInQuiz(false,1,channel); // end the quiz
+                			}
+                			else
+                			{
+                				players.get(ii).getQuiz().printQuestion(players.get(ii).getCurrentIndex(), channel);
+                			}
             			}
             			else
             			{
-            				players.get(ii).getQuiz().printQuestion(players.get(ii).getCurrentIndex(), channel);
+            				
+            				if(msg.equals("1") || msg.equals("2") || msg.equals("3") || msg.equals("4") || msg.equals("5")
+            						|| msg.equals("N1") || msg.equals("N2") || msg.equals("N3") || msg.equals("N4")
+            						|| msg.equals("N5"))
+            				{
+            					String jlpt_input = "";
+            					if(msg.equals("1") || msg.equals("2") || msg.equals("3") || msg.equals("4") || msg.equals("5"))
+            					{
+            						jlpt_input = "N" + msg;
+            					}
+            					else
+            					{
+            						jlpt_input = msg;
+            					}
+            					//players.get(ii).assignQuiz(getTotalKanjiCount(url,msg),url,jlpt_input);
+            					players.get(ii).assignQuiz(10,url,jlpt_input);
+             				    players.get(ii).setAnswerSheet(players.get(ii).getQuiz().getTotalQuestions());
+             				    players.get(ii).getQuiz().printQuestion(players.get(ii).getCurrentIndex(),channel);
+            				}
+            				else
+            				{
+            					channel.sendMessage("Invalid quiz option, setting quiz to default [N5]").queue();
+            					//players.get(ii).assignQuiz(getTotalKanjiCount(url,"N5"),url,"N5");
+            					players.get(ii).assignQuiz(10,url,"N5");
+             				    players.get(ii).setAnswerSheet(players.get(ii).getQuiz().getTotalQuestions());
+             				    players.get(ii).getQuiz().printQuestion(players.get(ii).getCurrentIndex(),channel);
+            				}
+            				players.get(ii).setQuizSelectDone(); // selection done
             			}
+            			break;
         			}
-        			else
-        			{
-        				
-        				if(msg.equals("1") || msg.equals("2") || msg.equals("3") || msg.equals("4") || msg.equals("5")
-        						|| msg.equals("N1") || msg.equals("N2") || msg.equals("N3") || msg.equals("N4")
-        						|| msg.equals("N5"))
-        				{
-        					String jlpt_input = "";
-        					if(msg.equals("1") || msg.equals("2") || msg.equals("3") || msg.equals("4") || msg.equals("5"))
-        					{
-        						jlpt_input = "N" + msg;
-        					}
-        					else
-        					{
-        						jlpt_input = msg;
-        					}
-        					//players.get(ii).assignQuiz(getTotalKanjiCount(url,msg),url,jlpt_input);
-        					players.get(ii).assignQuiz(10,url,jlpt_input);
-         				    players.get(ii).setAnswerSheet(players.get(ii).getQuiz().getTotalQuestions());
-         				    players.get(ii).getQuiz().printQuestion(players.get(ii).getCurrentIndex(),channel);
-        				}
-        				else
-        				{
-        					channel.sendMessage("Invalid quiz option, setting quiz to default [N5]").queue();
-        					//players.get(ii).assignQuiz(getTotalKanjiCount(url,"N5"),url,"N5");
-        					players.get(ii).assignQuiz(10,url,"N5");
-         				    players.get(ii).setAnswerSheet(players.get(ii).getQuiz().getTotalQuestions());
-         				    players.get(ii).getQuiz().printQuestion(players.get(ii).getCurrentIndex(),channel);
-        				}
-        				players.get(ii).setQuizSelectDone(); // selection done
-        			}
-        			break;
         		}
         	}
         }
@@ -266,6 +250,11 @@ public class CheribotMain extends ListenerAdapter
             // of its different forms will handle ratelimiting for you automatically!
 
             channel.sendMessage("pong!").queue();
+        }
+        else if (msg.equals("!bits"))
+        {
+        	int my_bits = players.get(player_index).getBattleAccount().getCheribits();
+        	channel.sendMessage("You have " + my_bits + " cheribits in your account").queue();
         }
         else if (msg.equals("!kanji"))
         {
@@ -357,7 +346,6 @@ public class CheribotMain extends ListenerAdapter
                 System.out.println(e.getMessage());
                 channel.sendMessage("もう、先輩のアカウントがありました。。。 D:").queue();
             }
-        	
         }
         else if (msg.equals("!drop"))
         {
@@ -400,76 +388,15 @@ public class CheribotMain extends ListenerAdapter
             }
             */
         }
-        else if (msg.equals("!update") && author.getName().equals("Cherisle"))
-        {
-        	String up_vocab = "UPDATE vocabulary SET romaji = '' WHERE romaji = null";
-        	// SQL statement for updating contents inside pre-existing table
-            String sql1 = "";//"UPDATE kanjis SET JLPT = 'N5' WHERE kanji = '大';";
-            String sql2 = "UPDATE vocabulary SET romaji = 'aku' WHERE vocab = 'あした';";
-            String sql3 = "UPDATE vocabulary SET romaji = 'akeru' WHERE vocab = 'あそこ';";
-            String sql4 = "UPDATE vocabulary SET romaji = 'ageru' WHERE vocab = '遊ぶ';";
-            String sql5 = "UPDATE vocabulary SET romaji = 'asa' WHERE vocab = '温かい';";
-            String sql6 = "UPDATE vocabulary SET romaji = 'asagohan' WHERE vocab = '朝御飯';";
-            String sql7 = "UPDATE vocabulary SET romaji = 'asatte' WHERE vocab = 'あさって';";
-            String sql8 = "UPDATE vocabulary SET romaji = 'ashi' WHERE vocab = '足';";
-            //String sql9 = "UPDATE kanjis SET JLPT = 'N4' WHERE kanji = '声';";
-            //String sql10 = "UPDATE kanjis SET JLPT = 'N4' WHERE kanji = '使';";
-            //String sql11 = "UPDATE kanjis SET JLPT = 'N4' WHERE kanji = '作';";
-            //String sql12 = "UPDATE kanjis SET JLPT = 'N2' WHERE kanji = '降';";
-            String[] statements = new String[]{sql2,sql3,sql4,sql5,sql6,sql7,sql8};
-
-            //"ALTER TABLE kanjis ADD COLUMN JLPT text; UPDATE kanjis SET COLNew = 'not set';";
-            		
-            //"UPDATE kanjis SET readings = 'おん・オン・イン・~ノン・おと・ね' WHERE kanji = '音';";
+        else if (command[0].equals("!insert") && command.length == 2 && author.getName().equals("Capt_nikku"))
+        {		
+            String ins1 = "INSERT INTO vocabulary (vocab,kanji1,kanji2,kanji3,kana,type,definition,JLPT,romaji) VALUES("
+            + command[1] + ");";
             
-            
+            System.out.println(ins1);
             try (Connection conn = DriverManager.getConnection(url);
                     Statement stmt = conn.createStatement()) 
             {
-            	// create a new table
-                stmt.execute(up_vocab);
-                
-            	//for(String sql : statements)
-            	//{
-            	//    stmt.execute(sql);
-            	//}
-            	channel.sendMessage("Successful update").queue();
-            } catch (SQLException e) 
-            {
-                System.out.println(e.getMessage());
-                channel.sendMessage("Failed").queue();
-            }
-            
-            
-            /*
-            System.out.println("Update successful, see below:");
-            
-            String kanjis = "SELECT * FROM kanjis WHERE kanji = '音';";
-        	try (Connection conn = DriverManager.getConnection(url);
-                    Statement stmt  = conn.createStatement();
-                    ResultSet rs    = stmt.executeQuery(kanjis)){
-                   
-                   //loop through the result set
-                   while (rs.next()) 
-                   {
-                       //user exists in db
-                	   System.out.println(rs.getString("kanji") +  "\n" + 
-                               rs.getString("readings") + "\n" +
-                               rs.getString("meanings") + "\n" +
-                               rs.getString("examples") + "\n");
-                   }
-               } catch (SQLException e) {
-                   System.out.println(e.getMessage());
-               }
-            */
-        }
-        else if (command[0].equals("!insert") && command.length == 2 && author.getName().equals("Capt_nikku"))
-        {		
-            String ins1 = "INSERT INTO vocabulary (vocab,kanji1,kanji2,kanji3,kana,type,definition,JLPT) VALUES("
-            + command[1] + ");";
-
-            try (Connection conn = DriverManager.getConnection(url);
-                    Statement stmt = conn.createStatement()) {
                     // create a new table
                     stmt.execute(ins1);
                     channel.sendMessage("Successful insert").queue();
@@ -479,60 +406,12 @@ public class CheribotMain extends ListenerAdapter
             }
             
         }
-        else if (msg.equals("!insert") && author.getName().equals("Cherisle"))
-        {
-        	/*
-        	// SQL statement for creating a new table
-            String sql = "CREATE TABLE IF NOT EXISTS vocabulary (\n"
-                    + "	id integer PRIMARY KEY,\n"
-                    + "	vocab text NOT NULL,\n"
-                    + "	kanji1 text,\n"
-                    + " kanji2 text,\n"
-                    + " kanji3 text,\n"
-                    + " kana text NOT NULL, \n"
-                    + " type text NOT NULL, \n"
-                    + " definition text NOT NULL, \n"
-                    + " JLPT text,\n"
-                    + " UNIQUE(vocab));"; */
-        	
-        	
-            String ins1 = "INSERT INTO vocabulary (vocab,kanji1,kanji2,kanji3,kana,type,definition,JLPT) VALUES("
-            + "'明るい','明','N/A','N/A','あかるい','adjective','bright; cheerful','N5');";
-            String ins2 = "INSERT INTO vocabulary (vocab,kanji1,kanji2,kanji3,kana,type,definition,JLPT) VALUES("
-            + "'秋','秋','N/A','N/A','あき','noun','autumn; fall','N5');";
-            String ins3 = "INSERT INTO vocabulary (vocab,kanji1,kanji2,kanji3,kana,type,definition,JLPT) VALUES("
-            + "'開く','開','N/A','N/A','あく','う-verb; intransitive-verb','to open; to become open','N5');";
-            String ins4 = "INSERT INTO vocabulary (vocab,kanji1,kanji2,kanji3,kana,type,definition,JLPT) VALUES("
-            + "'開ける','開','N/A','N/A','あける','る-verb','to open','N5');";
-            String ins5 = "INSERT INTO vocabulary (vocab,kanji1,kanji2,kanji3,kana,type,definition,JLPT) VALUES("
-            + "'上げる','上','N/A','N/A','あげる','る-verb','to give','N5');";
-            String[] insGroup = new String[]{ins1,ins2,ins3,ins4,ins5};
-            //String insert = "INSERT INTO kanjis (kanji,readings,meanings,examples) VALUES ("
-            //+ "'降',"
-            //+ "'**コウ**・**ゴ**・**お**りる・**お**ろす・**ふ**る・**ふ**り・**くだ**る・**くだ**す'," 
-            //+ "'descend; precipitate; fall; surrender',"
-            //+ "'降り積もる -ふりつもる-furitsumoru-(verb) to fall and pile up (e.g. snow); to lie thick/雨降り -あめふり-amefuri-(noun) rainfall; rainy weather/下降 [N2]-かこう-kakou-(noun) descent; fall; drop; decline; downturn; subsidence');";
-            
-            try (Connection conn = DriverManager.getConnection(url);
-                    Statement stmt = conn.createStatement()) {
-                
-            	for(String sql : insGroup)
-            	{
-            	    stmt.execute(sql);
-            	}
-            	//stmt.execute(sql);
-            } catch (SQLException e) {
-                System.out.println(e.getMessage());
-            }
-            
-        }
         else if (msg.equals("!select") && author.getName().equals("Cherisle"))
         {
         	/*String kanjis = "SELECT * FROM kanjis;";
         	try (Connection conn = DriverManager.getConnection(url);
                     Statement stmt  = conn.createStatement();
                     ResultSet rs    = stmt.executeQuery(kanjis)){
-                   
                    //loop through the result set
                    while (rs.next()) 
                    {
@@ -656,6 +535,10 @@ public class CheribotMain extends ListenerAdapter
                 				   String relog_msg = author.getName() + "#" + author.getId().substring(0,4) + ", you are logged back in. Welcome back!";
                 				   channel.sendMessage(relog_msg).queue();
                 				   players.get(ii).setActive(true);
+                				   BattleAccount ba_store = players.get(ii).getBattleAccount();
+                				   String name_store = players.get(ii).getName();
+                				   String id_store = players.get(ii).getId(); 
+                				   ba_store.DeserializeAccount(name_store,id_store);
                 				   break;
                 			   }
                 			   else if(ii == players.size()-1) //last player in loop
@@ -701,6 +584,7 @@ public class CheribotMain extends ListenerAdapter
                 			   {
                 				   players.get(ii).setActive(false);
                 				   players.get(ii).setInQuiz(false,0,channel);
+                				   players.get(ii).getBattleAccount().SerializeAccount(players.get(ii).getBattleAccount().getFileName(),true);
                 				   String logout_msg = author.getName() + "#" + author.getId() + " - Logout successful!";
                 				   channel.sendMessage(logout_msg).queue();
                 				   break;
@@ -989,7 +873,7 @@ public class CheribotMain extends ListenerAdapter
 	    {
 			for (VoiceChannel voiceChannel : audioManager.getGuild().getVoiceChannels())
 			{
-				if(voiceChannel.getName().equals("Gaming Room 1"))
+				if(voiceChannel.getName().equals("Helena's UFO"))
 				{
 					audioManager.openAudioConnection(voiceChannel);
 					break;

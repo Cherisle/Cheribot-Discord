@@ -21,6 +21,7 @@ public class Player
 	private String[] quiz_answers;
 	private int current_index; // index for quiz-taking
 	private Random randomizer;
+	private BattleAccount ba;
 	
 	public Player(String p_name, String p_id, boolean p_active)
 	{
@@ -32,6 +33,7 @@ public class Player
 		randomizer = new Random();
 		current_index = 0; //init
 		quizSelectFlag = false;
+		ba = new BattleAccount(p_name,p_id);
 	}
 	
 	public void setActive(boolean b)
@@ -52,7 +54,9 @@ public class Player
 			if(quiz_complete == 1)
 			{
 				quizSelectFlag = false; //reset the quiz select flag for new quiz
-				my_quiz.checkAnswers(quiz_answers,c);
+				int amount_correct = my_quiz.checkAnswers(quiz_answers,c);
+				ba.gainCheribits(amount_correct);
+				ba.SerializeAccount(ba.getFileName(),true);
 			}
 			else
 			{
@@ -75,6 +79,11 @@ public class Player
 	public void setAnswerSheet(int sheet_length)
 	{
 		quiz_answers = new String[sheet_length];
+	}
+	
+	public BattleAccount getBattleAccount()
+	{
+		return ba;
 	}
 	
 	public boolean getInQuiz()
