@@ -1,17 +1,17 @@
-import net.dv8tion.jda.core.AccountType;
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.JDABuilder;
-import net.dv8tion.jda.core.Permission;
-import net.dv8tion.jda.client.entities.Group;
-import net.dv8tion.jda.core.entities.*;
-import net.dv8tion.jda.core.events.Event;
-import net.dv8tion.jda.core.events.ReadyEvent;
-import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.core.exceptions.PermissionException;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
-import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import net.dv8tion.jda.core.managers.AudioManager;
-import net.dv8tion.jda.core.hooks.EventListener;
+import net.dv8tion.jda.api.AccountType;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.Event;
+import net.dv8tion.jda.api.events.GenericEvent;
+import net.dv8tion.jda.api.events.ReadyEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.exceptions.PermissionException;
+import net.dv8tion.jda.api.exceptions.RateLimitedException;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.managers.AudioManager;
+import net.dv8tion.jda.api.hooks.EventListener;
 import javax.security.auth.login.LoginException;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
@@ -22,6 +22,9 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+
+import static net.dv8tion.jda.api.requests.GatewayIntent.GUILD_MESSAGES;
+import static net.dv8tion.jda.api.requests.GatewayIntent.GUILD_VOICE_STATES;
 
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -40,14 +43,17 @@ import java.sql.Statement;
 
 public class CheribotMain extends ListenerAdapter
 {
-
 	public static void main(String[] args) throws LoginException, InterruptedException
 	{
 		try
 		{
 			String token = "NTA3Mzg0NDQzNTY5NDM4NzUw.Dr2DgA.pQ8uarpO-x2Ke84FxwhBA_w9L1Q";
 			// Note: It is important to register your ReadyListener before building
-			JDA jda = new JDABuilder(token).addEventListener(new CheribotMain()).build();
+			//JDA jda = new JDABuilder(token).addEventListener(new CheribotMain()).build();
+			JDA jda = JDABuilder.create(token, GUILD_MESSAGES, GUILD_VOICE_STATES)
+		            .addEventListeners(new CheribotMain())
+		            .build();
+			
 			jda.awaitReady(); // Blocking guarantees that JDA will be completely loaded.
 		}
         catch (LoginException e)
@@ -160,6 +166,7 @@ public class CheribotMain extends ListenerAdapter
 
             System.out.printf("[PRIV]<%s>: %s\n", author.getName(), msg);
         }
+        /*
         else if (event.isFromType(ChannelType.GROUP))   //If this message was sent to a Group. This is CLIENT only!
         {
             //The message was sent in a Group. It should be noted that Groups are CLIENT only.
@@ -168,6 +175,7 @@ public class CheribotMain extends ListenerAdapter
 
             System.out.printf("[GRP: %s]<%s>: %s\n", groupName, author.getName(), msg);
         }
+        */
 
 
         //Now that you have a grasp on the things that you might see in an event, specifically MessageReceivedEvent,
@@ -655,6 +663,7 @@ public class CheribotMain extends ListenerAdapter
 
                         //Remember, due to the fact that we're using queue we will never have to deal with RateLimits.
                         // JDA will do it all for you so long as you are using queue!
+                        /*
                         guild.getController().kick(member).queue(
                             success -> channel.sendMessage("Kicked ").append(member.getEffectiveName()).append("! Cya!").queue(),
                             error ->
@@ -678,6 +687,8 @@ public class CheribotMain extends ListenerAdapter
                                            .append(error.getMessage()).queue();
                                 }
                             });
+                            
+                            */
                     }
                 }
             }
@@ -817,7 +828,7 @@ public class CheribotMain extends ListenerAdapter
 	        channel.sendMessage("Adding to queue " + track.getInfo().title).queue();
 
 	        play(channel.getGuild(), musicManager, track);
-	        }
+          }
 
 	      @Override
 	      public void playlistLoaded(AudioPlaylist playlist)
@@ -855,7 +866,7 @@ public class CheribotMain extends ListenerAdapter
 		{
 			musicManager.player.setVolume(20);
 		}
-
+		System.out.println("Queueing track...");
 		musicManager.scheduler.queue(track);
 	}
 
